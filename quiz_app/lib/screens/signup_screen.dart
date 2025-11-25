@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class SignupScreen extends StatelessWidget {
+  const SignupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +23,7 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Title - Bold with more space
+                // App Logo/Title
                 const Text(
                   'QuizApp',
                   style: TextStyle(
@@ -34,9 +33,38 @@ class LoginScreen extends StatelessWidget {
                     fontFamily: 'Times New Roman',
                   ),
                 ),
-                const SizedBox(height: 80),
+                const SizedBox(height: 8),
+                const Text(
+                  'Create Your Account',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white70,
+                    fontFamily: 'Times New Roman',
+                  ),
+                ),
+                const SizedBox(height: 50),
 
-                // Email Field - White background
+                // Full Name Field
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Full Name',
+                      hintText: 'Enter your full name',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: const Icon(Icons.person, color: Colors.grey),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Email Field
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -57,7 +85,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Password Field - White background
+                // Password Field
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -82,37 +110,76 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 20),
 
-                // Forgot Password - White text
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      // Navigate to forgot password screen
-                    },
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontFamily: 'Times New Roman',
+                // Confirm Password Field
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Confirm Password',
+                      hintText: 'Confirm your password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.visibility, color: Colors.grey),
+                        onPressed: () {
+                          // Toggle password visibility
+                        },
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 10),
+
+                // Terms and Conditions Checkbox
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Checkbox(
+                        value: false,
+                        onChanged: (value) {
+                          // Handle terms acceptance
+                        },
+                        fillColor: MaterialStateProperty.all(Colors.white),
+                        checkColor: Colors.blue,
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            // Show terms and conditions
+                          },
+                          child: const Text(
+                            'I agree to the Terms and Conditions',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontFamily: 'Times New Roman',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 30),
 
-                // Sign In Button - Smaller width, white with bold black text
+                // Create Account Button - Smaller width, white with bold black text
                 Container(
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      // For prototype, any non-empty credentials work
-                      if (AuthService.login('email', 'password')) {
-                        Navigator.pushReplacementNamed(context, '/home');
-                      }
+                      // Sign up logic here
+                      Navigator.pushReplacementNamed(context, '/home');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -123,7 +190,7 @@ class LoginScreen extends StatelessWidget {
                       elevation: 2,
                     ),
                     child: const Text(
-                      'Sign In',
+                      'Create Account',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -176,7 +243,7 @@ class LoginScreen extends StatelessWidget {
                         icon: const Icon(Icons.g_mobiledata, 
                             size: 20, color: Colors.black),
                         onPressed: () {
-                          // Google sign in
+                          // Google sign up
                         },
                       ),
                     ),
@@ -194,7 +261,7 @@ class LoginScreen extends StatelessWidget {
                         icon: const Icon(Icons.apple, 
                             color: Colors.black, size: 20),
                         onPressed: () {
-                          // Apple sign in
+                          // Apple sign up
                         },
                       ),
                     ),
@@ -202,12 +269,12 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Don't have an account - White text with light blue for sign up
+                // Already have an account - White text with light blue for login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      "Don't have an account? ",
+                      "Already have an account? ",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
@@ -216,10 +283,10 @@ class LoginScreen extends StatelessWidget {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pushNamed(context, '/signup');
+                        Navigator.pushReplacementNamed(context, '/login');
                       },
                       child: const Text(
-                        'Sign Up',
+                        'Sign In',
                         style: TextStyle(
                           color: Colors.lightBlueAccent,
                           fontSize: 14,
