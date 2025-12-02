@@ -19,15 +19,12 @@ class GetStartedScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.blue.shade600,
-                    Colors.purple.shade600,
-                  ],
+                  colors: [Colors.blue.shade600, Colors.purple.shade600],
                 ),
               ),
             ),
           ),
-          
+
           // Parabolic curve divider
           Positioned(
             top: MediaQuery.of(context).size.height * 0.6 - 1,
@@ -45,9 +42,7 @@ class GetStartedScreen extends StatelessWidget {
             left: 0,
             right: 0,
             height: MediaQuery.of(context).size.height * 0.45,
-            child: Container(
-              color: Colors.white,
-            ),
+            child: Container(color: Colors.white),
           ),
 
           // Content
@@ -111,7 +106,7 @@ class GetStartedScreen extends StatelessWidget {
                         const SizedBox(height: 40),
 
                         // Get Started Button - Smaller width
-                        Container(
+                        SizedBox(
                           width: 200, // Smaller fixed width
                           height: 50,
                           child: ElevatedButton(
@@ -158,19 +153,19 @@ class ParabolicCurvePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    
+
     // Start from bottom-left
     path.moveTo(0, size.height);
-    
+
     // Create parabolic curve (x² function)
     for (double x = 0; x <= size.width; x++) {
       // Normalize x to range [-1, 1]
       double normalizedX = (x / size.width) * 2 - 1;
-      
+
       // Calculate y using parabolic function y = x²
       // We invert it to create a upward curve
       double y = normalizedX * normalizedX * size.height * 0.8;
-      
+
       // Draw the curve
       if (x == 0) {
         path.moveTo(x, y);
@@ -178,7 +173,7 @@ class ParabolicCurvePainter extends CustomPainter {
         path.lineTo(x, y);
       }
     }
-    
+
     // Complete the shape by going to bottom-right and back to start
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);
