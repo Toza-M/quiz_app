@@ -1,7 +1,119 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  bool _termsAccepted = false;
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signup() async {
+    if (_fullNameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must be at least 6 characters'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!_termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please accept Terms and Conditions'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await AuthService.register(
+        _fullNameController.text.trim(),
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration failed. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,10 +123,7 @@ class SignupScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade600,
-              Colors.purple.shade600,
-            ],
+            colors: [Colors.blue.shade600, Colors.purple.shade600],
           ),
         ),
         child: Center(
@@ -49,6 +158,7 @@ class SignupScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
+                    controller: _fullNameController,
                     decoration: InputDecoration(
                       labelText: 'Full Name',
                       hintText: 'Enter your full name',
@@ -69,6 +179,7 @@ class SignupScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
+                    controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       hintText: 'Enter your email',
@@ -90,7 +201,8 @@ class SignupScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
-                    obscureText: true,
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       labelText: 'Password',
                       hintText: 'Enter your password',
@@ -102,9 +214,16 @@ class SignupScreen extends StatelessWidget {
                       fillColor: Colors.white,
                       prefixIcon: const Icon(Icons.lock, color: Colors.grey),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.grey),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
                         onPressed: () {
-                          // Toggle password visibility
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
                         },
                       ),
                     ),
@@ -117,7 +236,8 @@ class SignupScreen extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
-                    obscureText: true,
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
                       labelText: 'Confirm Password',
                       hintText: 'Confirm your password',
@@ -127,11 +247,21 @@ class SignupScreen extends StatelessWidget {
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: Colors.grey,
+                      ),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.grey),
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
                         onPressed: () {
-                          // Toggle password visibility
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
                         },
                       ),
                     ),
@@ -145,11 +275,13 @@ class SignupScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       Checkbox(
-                        value: false,
+                        value: _termsAccepted,
                         onChanged: (value) {
-                          // Handle terms acceptance
+                          setState(() {
+                            _termsAccepted = value ?? false;
+                          });
                         },
-                        fillColor: MaterialStateProperty.all(Colors.white),
+                        fillColor: WidgetStateProperty.all(Colors.white),
                         checkColor: Colors.blue,
                       ),
                       Expanded(
@@ -172,15 +304,12 @@ class SignupScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Create Account Button - Smaller width, white with bold black text
-                Container(
+                // Create Account Button
+                SizedBox(
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // Sign up logic here
-                      Navigator.pushReplacementNamed(context, '/home');
-                    },
+                    onPressed: _isLoading ? null : _signup,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
@@ -189,14 +318,23 @@ class SignupScreen extends StatelessWidget {
                       ),
                       elevation: 2,
                     ),
-                    child: const Text(
-                      'Create Account',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Times New Roman',
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.black,
+                            ),
+                          )
+                        : const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Times New Roman',
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -240,15 +378,18 @@ class SignupScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.g_mobiledata, 
-                            size: 20, color: Colors.black),
+                        icon: const Icon(
+                          Icons.g_mobiledata,
+                          size: 20,
+                          color: Colors.black,
+                        ),
                         onPressed: () {
                           // Google sign up
                         },
                       ),
                     ),
                     const SizedBox(width: 15),
-                    
+
                     // Apple Login - Smaller white button
                     Container(
                       width: 40,
@@ -258,8 +399,11 @@ class SignupScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.apple, 
-                            color: Colors.black, size: 20),
+                        icon: const Icon(
+                          Icons.apple,
+                          color: Colors.black,
+                          size: 20,
+                        ),
                         onPressed: () {
                           // Apple sign up
                         },
