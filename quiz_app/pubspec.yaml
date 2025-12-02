@@ -42,3 +42,10 @@ flutter:
         - asset: assets/fonts/times_new_roman.ttf
         - asset: assets/fonts/times_new_roman_bold.ttf
           weight: 700
+
+  fonts:
+    - family: Times New Roman
+      fonts:
+        - asset: assets/fonts/times_new_roman.ttf
+        - asset: assets/fonts/times_new_roman_bold.ttf
+          weight: 700
