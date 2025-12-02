@@ -1,8 +1,73 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter email and password'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await AuthService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      if (success) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed. Please check your credentials.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +89,6 @@ class LoginScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Title - Bold with more space
                 const Text(
                   'QuizApp',
                   style: TextStyle(
@@ -36,11 +100,12 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 80),
 
-                // Email Field - White background
+                // Email Field
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
+                    controller: _emailController,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       hintText: 'Enter your email',
@@ -57,12 +122,13 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Password Field - White background
+                // Password Field
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: TextField(
-                    obscureText: true,
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       labelText: 'Password',
                       hintText: 'Enter your password',
@@ -74,9 +140,16 @@ class LoginScreen extends StatelessWidget {
                       fillColor: Colors.white,
                       prefixIcon: const Icon(Icons.lock, color: Colors.grey),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.grey),
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Colors.grey,
+                        ),
                         onPressed: () {
-                          // Toggle password visibility
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
                         },
                       ),
                     ),
@@ -84,12 +157,39 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
 
-                // Forgot Password - White text
+                // Forgot Password
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Navigate to forgot password screen
+                      if (_emailController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please enter your email first'),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        AuthService.sendPasswordResetEmail(
+                            _emailController.text.trim());
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Password reset email sent! Check your inbox.'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to send reset email: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     },
                     child: const Text(
                       'Forgot Password?',
@@ -103,17 +203,12 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Sign In Button - Smaller width, white with bold black text
+                // Sign In Button
                 Container(
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // For prototype, any non-empty credentials work
-                      if (AuthService.login('email', 'password')) {
-                        Navigator.pushReplacementNamed(context, '/home');
-                      }
-                    },
+                    onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
@@ -122,19 +217,28 @@ class LoginScreen extends StatelessWidget {
                       ),
                       elevation: 2,
                     ),
-                    child: const Text(
-                      'Sign In',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Times New Roman',
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.black,
+                            ),
+                          )
+                        : const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Times New Roman',
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // Or divider - White
+                // Or divider
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -160,11 +264,11 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // Social Login Buttons - Smaller
+                // Social Login Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Google Login - Smaller white button
+                    // Google Login
                     Container(
                       width: 40,
                       height: 40,
@@ -173,16 +277,20 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.g_mobiledata, 
+                        icon: const Icon(Icons.g_mobiledata,
                             size: 20, color: Colors.black),
                         onPressed: () {
-                          // Google sign in
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Google sign in coming soon!'),
+                            ),
+                          );
                         },
                       ),
                     ),
                     const SizedBox(width: 15),
-                    
-                    // Apple Login - Smaller white button
+
+                    // Apple Login
                     Container(
                       width: 40,
                       height: 40,
@@ -191,10 +299,14 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.apple, 
+                        icon: const Icon(Icons.apple,
                             color: Colors.black, size: 20),
                         onPressed: () {
-                          // Apple sign in
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Apple sign in coming soon!'),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -202,7 +314,7 @@ class LoginScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                // Don't have an account - White text with light blue for sign up
+                // Don't have an account
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -229,6 +341,81 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+
+                // Test Firebase Button (Remove in production)
+                const SizedBox(height: 40),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Firebase Test',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontFamily: 'Times New Roman',
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          print('Testing Firebase connection...');
+                          final isLoggedIn = AuthService.isLoggedIn();
+                          final userName = AuthService.getCurrentUser();
+                          final userEmail = AuthService.getUserEmail();
+
+                          if (isLoggedIn) {
+                            print(
+                                '✅ User is logged in: $userName ($userEmail)');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('User logged in: $userName'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } else {
+                            print('ℹ️ No user logged in');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('No user logged in'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey.withOpacity(0.3),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Test Firebase Connection'),
+                      ),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Test with demo credentials
+                          _emailController.text = 'test@example.com';
+                          _passwordController.text = 'password123';
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Demo credentials filled. Click Sign In to test.'),
+                              backgroundColor: Colors.blue,
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue.withOpacity(0.3),
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text('Fill Demo Credentials'),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
