@@ -11,6 +11,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final quizzes = DummyData.getDummyQuizzes();
     final userName = AuthService.getCurrentUser();
+    final userEmail = AuthService.getUserEmail();
 
     return Scaffold(
       appBar: AppBar(
@@ -84,6 +85,17 @@ class HomeScreen extends StatelessWidget {
                             fontFamily: 'Times New Roman',
                           ),
                         ),
+                        if (userEmail != null) ...[
+                          const SizedBox(height: 5),
+                          Text(
+                            userEmail,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 12,
+                              fontFamily: 'Times New Roman',
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 5),
                         // Future Features Indicator
                         Container(
@@ -98,7 +110,7 @@ class HomeScreen extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.rocket_launch, 
+                              Icon(Icons.rocket_launch,
                                   size: 14, color: Colors.white),
                               const SizedBox(width: 5),
                               const Text(
@@ -151,6 +163,103 @@ class HomeScreen extends StatelessWidget {
                 QuizCard(quiz: quizzes[1]),
               ],
             ),
+
+            // Firebase Test Section (Remove in production)
+            const SizedBox(height: 40),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Firebase Status',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Times New Roman',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Icon(
+                        AuthService.isLoggedIn()
+                            ? Icons.check_circle
+                            : Icons.error,
+                        color: AuthService.isLoggedIn()
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          AuthService.isLoggedIn()
+                              ? '✅ Firebase connected. User: $userName'
+                              : '⚠️ Firebase not connected. Using demo mode.',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'Times New Roman',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (AuthService.isLoggedIn()) {
+                        final userData = await AuthService.getUserData();
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('User Data'),
+                            content: SingleChildScrollView(
+                              child: Text(
+                                userData?.toString() ?? 'No user data found',
+                                style: const TextStyle(
+                                    fontFamily: 'Times New Roman'),
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please login to view user data'),
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'View Firebase Data',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Times New Roman',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -176,11 +285,62 @@ class HomeScreen extends StatelessWidget {
         ],
         onTap: (index) {
           // Handle navigation
-          if (index == 2) {
-            // Navigate to settings (to be implemented)
+          if (index == 1) {
+            // My Quizzes
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('Settings screen coming soon!'),
+                content: Text('Quiz history feature coming soon!'),
+              ),
+            );
+          } else if (index == 2) {
+            // Settings
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Settings'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'App Version: 1.0.0',
+                      style: TextStyle(fontFamily: 'Times New Roman'),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Firebase Status:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Times New Roman',
+                      ),
+                    ),
+                    Text(
+                      AuthService.isLoggedIn()
+                          ? 'Connected (User: ${AuthService.getCurrentUser()})'
+                          : 'Not Connected',
+                      style: const TextStyle(fontFamily: 'Times New Roman'),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        AuthService.logout();
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/login', (route) => false);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Logout'),
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
               ),
             );
           }
@@ -301,6 +461,17 @@ class QuizCard extends StatelessWidget {
               height: 35,
               child: ElevatedButton(
                 onPressed: () {
+                  if (!AuthService.isLoggedIn()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please login to take quizzes'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    Navigator.pushNamed(context, '/login');
+                    return;
+                  }
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
