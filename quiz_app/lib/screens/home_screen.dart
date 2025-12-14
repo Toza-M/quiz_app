@@ -1,16 +1,40 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart'; // Ensure this import exists
 import '../data/dummy_data.dart';
 import '../models/quiz_model.dart';
 import 'quiz_session_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _userName = 'User'; // Default name
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  // Fetch the name from shared preferences
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // We assume the name is saved with key 'user_name'.
+      // If null, it defaults to 'User'
+      _userName = prefs.getString('user_name') ?? 'User';
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Ensure DummyData.getDummyQuizzes() returns your list of quizzes
     final quizzes = DummyData.getDummyQuizzes();
-    final userName = AuthService.getCurrentUser();
 
     return Scaffold(
       appBar: AppBar(
@@ -24,6 +48,17 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService.logout();
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -38,10 +73,7 @@ class HomeScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.shade600,
-                    Colors.purple.shade600,
-                  ],
+                  colors: [Colors.blue.shade600, Colors.purple.shade600],
                 ),
                 borderRadius: BorderRadius.circular(15),
               ),
@@ -76,7 +108,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          userName,
+                          _userName, // Uses the state variable
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -98,8 +130,11 @@ class HomeScreen extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.rocket_launch, 
-                                  size: 14, color: Colors.white),
+                              const Icon(
+                                Icons.rocket_launch,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                               const SizedBox(width: 5),
                               const Text(
                                 'More features coming soon!',
@@ -141,15 +176,17 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Quizzes List - Only Quiz 1 and Quiz 2
-            Column(
-              children: [
-                // Quiz 1
-                QuizCard(quiz: quizzes[0]),
-                const SizedBox(height: 15),
-                // Quiz 2
-                QuizCard(quiz: quizzes[1]),
-              ],
+            // Quizzes List
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: quizzes.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 15.0),
+                  child: QuizCard(quiz: quizzes[index]),
+                );
+              },
             ),
           ],
         ),
@@ -159,29 +196,19 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
-        currentIndex: 0, // Home is selected
+        currentIndex: 0,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.quiz),
-            label: 'My Quizzes',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'My Quizzes'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],
         onTap: (index) {
-          // Handle navigation
           if (index == 2) {
-            // Navigate to settings (to be implemented)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Settings screen coming soon!'),
-              ),
+              const SnackBar(content: Text('Settings screen coming soon!')),
             );
           }
         },
@@ -201,9 +228,7 @@ class QuizCard extends StatelessWidget {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -216,11 +241,7 @@ class QuizCard extends StatelessWidget {
                 color: Colors.blue.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.quiz,
-                color: Colors.blue,
-                size: 30,
-              ),
+              child: const Icon(Icons.quiz, color: Colors.blue, size: 30),
             ),
             const SizedBox(width: 15),
             // Quiz Info

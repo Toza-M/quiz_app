@@ -41,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // Call the backend via AuthService
+    // The AuthService handles saving the token and user name locally
     final result = await AuthService.login(email, password);
 
     setState(() {
@@ -56,7 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Login failed')),
+          SnackBar(
+            content: Text(result['message'] ?? 'Login failed'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -80,6 +84,8 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // App Logo/Title
+                const Icon(Icons.quiz, size: 80, color: Colors.white),
+                const SizedBox(height: 10),
                 const Text(
                   'QuizApp',
                   style: TextStyle(
@@ -89,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontFamily: 'Times New Roman',
                   ),
                 ),
-                const SizedBox(height: 80),
+                const SizedBox(height: 50),
 
                 // Email Field
                 Container(
@@ -153,7 +159,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Navigate to forgot password screen
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Feature coming soon!')),
+                      );
                     },
                     child: const Text(
                       'Forgot Password?',
@@ -168,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 30),
 
                 // Sign In Button
-                Container(
+                SizedBox(
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
@@ -196,80 +204,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                   ),
-                ),
-                const SizedBox(height: 20),
-
-                // Or divider
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(color: Colors.white.withOpacity(0.5)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontFamily: 'Times New Roman',
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(color: Colors.white.withOpacity(0.5)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Social Login Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Google Login
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.g_mobiledata,
-                          size: 20,
-                          color: Colors.black,
-                        ),
-                        onPressed: () {
-                          // Google sign in logic
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-
-                    // Apple Login
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.apple,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          // Apple sign in logic
-                        },
-                      ),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 30),
 

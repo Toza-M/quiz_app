@@ -60,20 +60,21 @@ def register():
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
+            # Check if user already exists
             cur.execute('SELECT id FROM users WHERE email = %s', (email,))
             if cur.fetchone():
                 return jsonify({'error': 'email already exists'}), 409
 
-                # Insert and let the database populate `created_at` (default CURRENT_TIMESTAMP)
-                cur.execute(
-                    '''INSERT INTO users (id, email, password_hash, full_name)
-                       VALUES (%s, %s, %s, %s)''',
-                    (user_id, email, pw_hash.decode('utf-8'), full_name)
-                )
+            # Insert new user
+            cur.execute(
+                '''INSERT INTO users (id, email, password_hash, full_name)
+                   VALUES (%s, %s, %s, %s)''',
+                (user_id, email, pw_hash.decode('utf-8'), full_name)
+            )
 
-                # fetch the created row to return
-                cur.execute('SELECT id, email, full_name, created_at FROM users WHERE id = %s', (user_id,))
-                created = cur.fetchone()
+            # Fetch the created row to return
+            cur.execute('SELECT id, email, full_name, created_at FROM users WHERE id = %s', (user_id,))
+            created = cur.fetchone()
 
         token = create_jwt({'user_id': user_id, 'email': email})
         return jsonify({'message': 'user registered', 'token': token, 'user': created}), 201
@@ -115,7 +116,15 @@ def login():
                 return jsonify({'error': 'invalid credentials'}), 401
 
             token = create_jwt({'user_id': row['id'], 'email': row['email']})
-            return jsonify({'message': 'login successful', 'token': token, 'user': {'id': row['id'], 'email': row['email'], 'full_name': row.get('full_name')}}), 200
+            return jsonify({
+                'message': 'login successful', 
+                'token': token, 
+                'user': {
+                    'id': row['id'], 
+                    'email': row['email'], 
+                    'full_name': row.get('full_name')
+                }
+            }), 200
 
     except Exception as e:
         current_app.logger.exception('DB error')

@@ -70,6 +70,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
 
     // Call the backend
+    // AuthService handles saving the token/name internally upon success
     final result = await AuthService.register(name, email, password);
 
     // Stop loading
@@ -86,7 +87,10 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         // Show error message from backend
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'] ?? 'Registration failed')),
+          SnackBar(
+            content: Text(result['message'] ?? 'Registration failed'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -110,25 +114,18 @@ class _SignupScreenState extends State<SignupScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // App Logo/Title
+                const Icon(Icons.person_add, size: 60, color: Colors.white),
+                const SizedBox(height: 10),
                 const Text(
-                  'QuizApp',
+                  'Create Account',
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                     fontFamily: 'Times New Roman',
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Create Your Account',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                    fontFamily: 'Times New Roman',
-                  ),
-                ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 30),
 
                 // Full Name Field
                 Container(
@@ -149,7 +146,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
 
                 // Email Field
                 Container(
@@ -171,7 +168,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
 
                 // Password Field
                 Container(
@@ -190,16 +187,10 @@ class _SignupScreenState extends State<SignupScreen> {
                       filled: true,
                       fillColor: Colors.white,
                       prefixIcon: const Icon(Icons.lock, color: Colors.grey),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.grey),
-                        onPressed: () {
-                          // Toggle password visibility if you wish to implement it
-                        },
-                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 15),
 
                 // Confirm Password Field
                 Container(
@@ -220,12 +211,6 @@ class _SignupScreenState extends State<SignupScreen> {
                       prefixIcon: const Icon(
                         Icons.lock_outline,
                         color: Colors.grey,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.visibility, color: Colors.grey),
-                        onPressed: () {
-                          // Toggle visibility
-                        },
                       ),
                     ),
                   ),
@@ -270,7 +255,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 30),
 
                 // Create Account Button
-                Container(
+                SizedBox(
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
@@ -300,80 +285,6 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Or divider
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Divider(color: Colors.white.withOpacity(0.5)),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'or',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontFamily: 'Times New Roman',
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(color: Colors.white.withOpacity(0.5)),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Social Login Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Google
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.g_mobiledata,
-                          size: 20,
-                          color: Colors.black,
-                        ),
-                        onPressed: () {
-                          // Google sign up logic
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-
-                    // Apple
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.apple,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          // Apple sign up logic
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
 
                 // Already have an account
                 Row(
