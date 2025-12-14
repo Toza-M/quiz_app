@@ -56,7 +56,6 @@ def register():
     pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
     user_id = str(uuid.uuid4())
-    created_at = int(datetime.datetime.utcnow().timestamp())
 
     try:
         conn = get_db_connection()
@@ -65,14 +64,19 @@ def register():
             if cur.fetchone():
                 return jsonify({'error': 'email already exists'}), 409
 
-            cur.execute(
-                '''INSERT INTO users (id, email, password_hash, full_name, created_at)
-                   VALUES (%s, %s, %s, %s, %s)''',
-                (user_id, email, pw_hash.decode('utf-8'), full_name, created_at)
-            )
+                # Insert and let the database populate `created_at` (default CURRENT_TIMESTAMP)
+                cur.execute(
+                    '''INSERT INTO users (id, email, password_hash, full_name)
+                       VALUES (%s, %s, %s, %s)''',
+                    (user_id, email, pw_hash.decode('utf-8'), full_name)
+                )
+
+                # fetch the created row to return
+                cur.execute('SELECT id, email, full_name, created_at FROM users WHERE id = %s', (user_id,))
+                created = cur.fetchone()
 
         token = create_jwt({'user_id': user_id, 'email': email})
-        return jsonify({'message': 'user registered', 'token': token}), 201
+        return jsonify({'message': 'user registered', 'token': token, 'user': created}), 201
 
     except Exception as e:
         current_app.logger.exception('DB error')
