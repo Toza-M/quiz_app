@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Dart
+name: Flutter Build & Test
 
 on:
   push:
@@ -18,11 +18,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Note: This workflow uses the latest stable version of the Dart SDK.
-      # You can specify other versions if desired, see documentation here:
-      # https://github.com/dart-lang/setup-dart/blob/main/README.md
-      # - uses: dart-lang/setup-dart@v1
-      - uses: dart-lang/setup-dart@9a04e6d73cca37bd455e0608d7e5092f881fd603
+      # Replaced dart-lang/setup-dart with the standard Flutter setup action.
+      # This ensures the 'flutter' command is available.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # You can specify a specific flutter version here if needed, e.g., '3.19.0'
+          # leaving it blank uses the latest stable.
 
       - name: Install dependencies
         run: flutter pub get
@@ -31,14 +33,16 @@ jobs:
       # Uncomment this step to verify the use of 'dart format' on each commit.
       # - name: Verify formatting
       #   run: dart format --output=none --set-exit-if-changed .
+      #   working-directory: quiz_app
 
       # Consider passing '--fatal-infos' for slightly stricter analysis.
+      # Changed to 'flutter analyze' and added working-directory.
       - name: Analyze project source
-        run: dart analyze
+        run: flutter analyze .
+        working-directory: quiz_app
 
       # Your project will need to have tests in test/ and a dependency on
-      # package: test for this step to succeed. Note that Flutter projects will
-      # want to change this to 'flutter test'.
+      # package: test for this step to succeed.
       - name: Run tests
         run: flutter test
         working-directory: quiz_app
