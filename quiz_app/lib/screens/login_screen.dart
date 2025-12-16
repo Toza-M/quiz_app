@@ -9,13 +9,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controllers for text fields
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // State for loading indicator
   bool _isLoading = false;
-  // State for password visibility
   bool _obscurePassword = true;
 
   @override
@@ -40,7 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    // Call the backend via AuthService
     final result = await AuthService.login(email, password);
 
     setState(() {
@@ -49,12 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (result['success']) {
       if (mounted) {
-        // Navigate to Home on success
         Navigator.pushReplacementNamed(context, '/home');
       }
     } else {
       if (mounted) {
-        // Show error message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Login failed'),
@@ -82,7 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Title
                 const Icon(Icons.quiz, size: 80, color: Colors.white),
                 const SizedBox(height: 10),
                 const Text(
@@ -96,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 50),
 
-                // Email Field
+                // Email
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -118,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Password Field
+                // Password
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -151,31 +144,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
-
-                // Forgot Password
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Feature coming soon!')),
-                      );
-                    },
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontFamily: 'Times New Roman',
-                      ),
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 30),
 
-                // Sign In Button
+                // Button
                 SizedBox(
+                  // FIXED: Container -> SizedBox
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
@@ -206,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Or divider
+                // Divider
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -214,14 +187,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(
                         child: Divider(
                           color: Colors.white.withValues(alpha: 0.5),
-                        ),
+                        ), // FIXED
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'or',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.white.withValues(alpha: 0.8), // FIXED
                             fontFamily: 'Times New Roman',
                           ),
                         ),
@@ -229,55 +202,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       Expanded(
                         child: Divider(
                           color: Colors.white.withValues(alpha: 0.5),
-                        ),
+                        ), // FIXED
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // Social Login Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.g_mobiledata,
-                          size: 20,
-                          color: Colors.black,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(
-                          Icons.apple,
-                          color: Colors.black,
-                          size: 20,
-                        ),
-                        onPressed: () {},
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-
-                // Don't have an account
+                // Sign Up Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

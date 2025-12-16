@@ -13,7 +13,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _userName = 'User'; // Default name
+
+  String _userName = 'User'
 
   @override
   void initState() {
@@ -21,12 +22,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUserName();
   }
 
-  // Fetch the name from shared preferences
   Future<void> _loadUserName() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      // We assume the name is saved with key 'user_name'.
-      // If null, it defaults to 'User'
       _userName = prefs.getString('user_name') ?? 'User';
     });
   }
@@ -53,11 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await AuthService.logout();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
+
+              // FIXED: Check if the widget is still on screen before using 'context'
+              if (!context.mounted) return;
+
+              Navigator.pushReplacementNamed(context, '/login');
             },
-          ),
+          )
         ],
       ),
       body: SingleChildScrollView(
@@ -79,12 +79,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  // User Avatar
                   Container(
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -94,7 +93,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(width: 15),
-                  // User Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,13 +100,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 14,
                             fontFamily: 'Times New Roman',
                           ),
                         ),
                         Text(
-                          _userName, // Uses the state variable
+                          _userName,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -117,26 +115,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 5),
-                        // Future Features Indicator
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
+                          child: const Row(
+                            // FIXED: Added const
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
-                                Icons.rocket_launch,
-                                size: 14,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 5),
-                              const Text(
+                              Icon(Icons.rocket_launch,
+                                  size: 14, color: Colors.white),
+                              SizedBox(width: 5),
+                              Text(
                                 'More features coming soon!',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -155,7 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Quizzes Section Header
             const Text(
               'Software Project Management Quizzes',
               style: TextStyle(
@@ -176,7 +170,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Quizzes List
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -191,7 +184,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      // Bottom Navigation Bar
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blue,
@@ -217,7 +209,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Quiz Card Widget
 class QuizCard extends StatelessWidget {
   final Quiz quiz;
 
@@ -233,18 +224,16 @@ class QuizCard extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            // Quiz Icon
             Container(
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.quiz, color: Colors.blue, size: 30),
             ),
             const SizedBox(width: 15),
-            // Quiz Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,7 +260,6 @@ class QuizCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // Difficulty
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -292,7 +280,6 @@ class QuizCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Questions Count
                       Text(
                         '${quiz.questionCount} questions',
                         style: const TextStyle(
@@ -302,7 +289,6 @@ class QuizCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Time
                       Text(
                         '${quiz.duration} min',
                         style: const TextStyle(
@@ -316,8 +302,7 @@ class QuizCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Start Button
-            Container(
+            SizedBox(
               width: 80,
               height: 35,
               child: ElevatedButton(

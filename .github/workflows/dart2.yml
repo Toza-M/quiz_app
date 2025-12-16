@@ -1,0 +1,48 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Flutter Build & Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Replaced dart-lang/setup-dart with the standard Flutter setup action.
+      # This ensures the 'flutter' command is available.
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # You can specify a specific flutter version here if needed, e.g., '3.19.0'
+          # leaving it blank uses the latest stable.
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: quiz_app
+
+      # Uncomment this step to verify the use of 'dart format' on each commit.
+      # - name: Verify formatting
+      #   run: dart format --output=none --set-exit-if-changed .
+      #   working-directory: quiz_app
+
+      # Consider passing '--fatal-infos' for slightly stricter analysis.
+      # Changed to 'flutter analyze' and added working-directory.
+      - name: Analyze project source
+        run: flutter analyze .
+        working-directory: quiz_app
+
+      # Your project will need to have tests in test/ and a dependency on
+      # package: test for this step to succeed.
+      - name: Run tests
+        run: flutter test
+        working-directory: quiz_app

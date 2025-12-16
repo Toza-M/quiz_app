@@ -3,15 +3,22 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  // Use 10.0.2.2 for Android Emulator.
-  // Use 'http://localhost:5000/auth' for iOS Simulator.
-  // Use your computer's IP address for physical devices.
-  // For Web (and iOS Simulator), use localhost:
+  // ---------------------------------------------------------
+  // IMPORTANT: Choose the correct URL for your emulator/device
+  // ---------------------------------------------------------
+
+  // Option A: For Web (Chrome) or iOS Simulator:
   static const String baseUrl = 'http://127.0.0.1:5000/auth';
 
-  /// Register a new user
+  // Option B: For Android Emulator (Standard):
+  // static const String baseUrl = 'http://10.0.2.2:5000/auth';
+
+  // Option C: For Physical Phone (Replace with your PC's IP):
+  // static const String baseUrl = 'http://192.168.1.5:5000/auth';
+
+  // --- Register Method (This was missing!) ---
   static Future<Map<String, dynamic>> register(
-    String fullName,
+    String name,
     String email,
     String password,
   ) async {
@@ -20,7 +27,7 @@ class AuthService {
         Uri.parse('$baseUrl/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'full_name': fullName,
+          'full_name': name,
           'email': email,
           'password': password,
         }),
@@ -29,16 +36,8 @@ class AuthService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
-        // According to your auth.py:
-        // return jsonify({'message': 'user registered', 'token': token, 'user': created}), 201
-
-        final token = data['token'];
-        final user = data['user'];
-        final name = user['full_name'];
-
-        // Save session data locally
-        await _saveUserData(token, name);
-
+        // Save token and name locally
+        await _saveUserData(data['token'], data['user']['full_name']);
         return {'success': true, 'message': 'Registration successful'};
       } else {
         return {
@@ -51,7 +50,7 @@ class AuthService {
     }
   }
 
-  /// Login existing user
+  // --- Login Method ---
   static Future<Map<String, dynamic>> login(
     String email,
     String password,
@@ -66,17 +65,8 @@ class AuthService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // According to your auth.py:
-        // return jsonify({'message': 'login successful', 'token': token, 'user': {'id': ... 'full_name': ...}}), 200
-
-        final token = data['token'];
-        final user = data['user'];
-        final name = user['full_name'];
-
-        // Save session data locally
-        await _saveUserData(token, name);
-
-        return {'success': true, 'user': user};
+        await _saveUserData(data['token'], data['user']['full_name']);
+        return {'success': true, 'message': 'Login successful'};
       } else {
         return {'success': false, 'message': data['error'] ?? 'Login failed'};
       }
@@ -85,29 +75,16 @@ class AuthService {
     }
   }
 
-  /// Save token and user name to SharedPreferences
+  // --- Logout Method ---
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
+
+  // --- Helper to save data ---
   static Future<void> _saveUserData(String token, String name) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
     await prefs.setString('user_name', name);
-  }
-
-  /// Retrieve the auth token
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
-  }
-
-  /// Retrieve the saved user name
-  static Future<String> getUserName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_name') ?? 'User';
-  }
-
-  /// Clear session data (Logout)
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
-    await prefs.remove('user_name');
   }
 }

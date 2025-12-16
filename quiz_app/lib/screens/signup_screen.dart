@@ -9,17 +9,13 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  // Controllers to capture user input
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  // State to show a loading spinner
   bool _isLoading = false;
-
-  // Checkbox state
   bool _agreedToTerms = false;
 
   @override
@@ -37,7 +33,6 @@ class _SignupScreenState extends State<SignupScreen> {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    // Basic Validation
     if (name.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
@@ -64,28 +59,22 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    // Start loading
     setState(() {
       _isLoading = true;
     });
 
-    // Call the backend
-    // AuthService handles saving the token/name internally upon success
     final result = await AuthService.register(name, email, password);
 
-    // Stop loading
     setState(() {
       _isLoading = false;
     });
 
     if (result['success']) {
       if (mounted) {
-        // Navigate to Home on success
         Navigator.pushReplacementNamed(context, '/home');
       }
     } else {
       if (mounted) {
-        // Show error message from backend
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(result['message'] ?? 'Registration failed'),
@@ -113,7 +102,6 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Title
                 const Icon(Icons.person_add, size: 60, color: Colors.white),
                 const SizedBox(height: 10),
                 const Text(
@@ -127,7 +115,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Full Name Field
+                // Name
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -148,7 +136,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                // Email Field
+                // Email
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -170,7 +158,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                // Password Field
+                // Password
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -192,7 +180,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 15),
 
-                // Confirm Password Field
+                // Confirm Pass
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -217,7 +205,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                // Terms and Conditions Checkbox
+                // Terms
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -229,7 +217,8 @@ class _SignupScreenState extends State<SignupScreen> {
                             _agreedToTerms = value ?? false;
                           });
                         },
-                        fillColor: MaterialStateProperty.all(Colors.white),
+                        // FIXED: WidgetStateProperty
+                        fillColor: WidgetStateProperty.all(Colors.white),
                         checkColor: Colors.blue,
                       ),
                       Expanded(
@@ -254,8 +243,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Create Account Button
+                // Button
                 SizedBox(
+                  // FIXED: Container -> SizedBox
                   width: 200,
                   height: 50,
                   child: ElevatedButton(
@@ -286,7 +276,37 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Already have an account
+                // Divider
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ), // FIXED
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8), // FIXED
+                            fontFamily: 'Times New Roman',
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ), // FIXED
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Sign In Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
