@@ -49,11 +49,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await AuthService.logout();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
+              // FIXED: Correct check for async gap
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(context, '/login');
             },
-          ),
+          )
         ],
       ),
       body: SingleChildScrollView(
@@ -69,7 +69,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Colors.blue.shade600, Colors.purple.shade600],
+                  colors: [
+                    Colors.blue.shade600,
+                    Colors.purple.shade600,
+                  ],
                 ),
                 borderRadius: BorderRadius.circular(15),
               ),
@@ -79,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.3), // FIXED
+                      color: Colors.white.withValues(alpha: 0.3),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -96,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8), // FIXED
+                            color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 14,
                             fontFamily: 'Times New Roman',
                           ),
@@ -117,17 +120,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2), // FIXED
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
+                          child: const Row(
+                            // FIXED: Added const
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(
-                                Icons.rocket_launch,
-                                size: 14,
-                                color: Colors.white,
-                              ),
+                            children: [
+                              Icon(Icons.rocket_launch,
+                                  size: 14, color: Colors.white),
                               SizedBox(width: 5),
                               Text(
                                 'More features coming soon!',
@@ -188,8 +189,14 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.grey,
         currentIndex: 0,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'My Quizzes'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.quiz),
+            label: 'My Quizzes',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
@@ -198,7 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) {
           if (index == 2) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Settings screen coming soon!')),
+              const SnackBar(
+                content: Text('Settings screen coming soon!'),
+              ),
             );
           }
         },
@@ -217,7 +226,9 @@ class QuizCard extends StatelessWidget {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -226,10 +237,14 @@ class QuizCard extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1), // FIXED
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.quiz, color: Colors.blue, size: 30),
+              child: const Icon(
+                Icons.quiz,
+                color: Colors.blue,
+                size: 30,
+              ),
             ),
             const SizedBox(width: 15),
             Expanded(
@@ -301,7 +316,6 @@ class QuizCard extends StatelessWidget {
               ),
             ),
             SizedBox(
-              // FIXED: Container -> SizedBox
               width: 80,
               height: 35,
               child: ElevatedButton(

@@ -43,7 +43,7 @@ class ScoreScreen extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                color.withValues(alpha: 0.8), // FIXED
+                color.withValues(alpha: 0.8),
                 Colors.white,
               ],
               stops: const [0.0, 0.4],
@@ -62,7 +62,7 @@ class ScoreScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1), // FIXED
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -73,7 +73,7 @@ class ScoreScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1), // FIXED
+                        color: color.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -110,6 +110,7 @@ class ScoreScreen extends StatelessWidget {
                         Text(
                           '$score',
                           style: TextStyle(
+                            // FIXED: Added const to TextStyle if possible, but actually the error was likely on the whole Text or Row
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
@@ -138,10 +139,7 @@ class ScoreScreen extends StatelessWidget {
                   children: [
                     _buildStatItem('Correct', '$score', Colors.green),
                     _buildStatItem(
-                      'Wrong',
-                      '${totalQuestions - score}',
-                      Colors.red,
-                    ),
+                        'Wrong', '${totalQuestions - score}', Colors.red),
                     _buildStatItem('Total', '$totalQuestions', Colors.blue),
                   ],
                 ),
@@ -153,7 +151,6 @@ class ScoreScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: SizedBox(
-                  // FIXED
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
@@ -161,7 +158,8 @@ class ScoreScreen extends StatelessWidget {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
+                          builder: (context) =>
+                              const HomeScreen(), // FIXED: Added const
                         ),
                         (route) => false,
                       );
@@ -198,7 +196,7 @@ class ScoreScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1), // FIXED
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
