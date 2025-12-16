@@ -1,0 +1,37 @@
+name: Flutter Check & Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository code
+      - uses: actions/checkout@v4
+
+      # 2. Set up the Flutter environment
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # You can pin a specific version if needed, e.g., flutter-version: '3.19.0'
+
+      # 3. Install dependencies (packages like http, shared_preferences)
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: quiz_app
+
+      # 4. Check for code errors and warnings
+      # This will fail if there are any errors (like the ones we just fixed)
+      - name: Analyze project source
+        run: flutter analyze
+        working-directory: quiz_app
+
+      # 5. Run automated tests
+      - name: Run tests
+        run: flutter test
+        working-directory: quiz_app
