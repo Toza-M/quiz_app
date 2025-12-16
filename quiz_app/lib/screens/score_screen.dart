@@ -109,8 +109,7 @@ class ScoreScreen extends StatelessWidget {
                       children: [
                         Text(
                           '$score',
-                          style: TextStyle(
-                            // FIXED: Added const to TextStyle if possible, but actually the error was likely on the whole Text or Row
+                          style: const TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
                             color: Colors.black87,
@@ -159,7 +158,7 @@ class ScoreScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              const HomeScreen(), // FIXED: Added const
+                              const HomeScreen(), // <--- FIXED: Added const here
                         ),
                         (route) => false,
                       );

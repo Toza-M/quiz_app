@@ -49,8 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await AuthService.logout();
-              // FIXED: Correct check for async gap
-              if (!mounted) return;
+
+              // FIXED: Check if the widget is still on screen before using 'context'
+              if (!context.mounted) return;
+
               Navigator.pushReplacementNamed(context, '/login');
             },
           )
