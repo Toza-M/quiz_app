@@ -41,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // Call the backend via AuthService
-    // The AuthService handles saving the token and user name locally
     final result = await AuthService.login(email, password);
 
     setState(() {
@@ -204,6 +203,77 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                   ),
+                ),
+                const SizedBox(height: 20),
+
+                // Or divider
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontFamily: 'Times New Roman',
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Social Login Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.g_mobiledata,
+                          size: 20,
+                          color: Colors.black,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.apple,
+                          color: Colors.black,
+                          size: 20,
+                        ),
+                        onPressed: () {},
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 30),
 

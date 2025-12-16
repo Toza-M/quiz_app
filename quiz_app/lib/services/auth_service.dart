@@ -6,7 +6,8 @@ class AuthService {
   // Use 10.0.2.2 for Android Emulator.
   // Use 'http://localhost:5000/auth' for iOS Simulator.
   // Use your computer's IP address for physical devices.
-  static const String baseUrl = 'http://10.0.2.2:5000/auth';
+  // For Web (and iOS Simulator), use localhost:
+  static const String baseUrl = 'http://127.0.0.1:5000/auth';
 
   /// Register a new user
   static Future<Map<String, dynamic>> register(

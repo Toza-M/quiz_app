@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # <--- 1. Add this import
 from werkzeug.utils import secure_filename
 import re
 import os
@@ -24,6 +25,7 @@ except Exception:
     PyPDF2 = None
 
 app = Flask(__name__)
+CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024  # 8 MB max upload
 app.config['UPLOAD_EXTENSIONS'] = ['.txt', '.pdf']
 
@@ -197,4 +199,4 @@ def generate():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
