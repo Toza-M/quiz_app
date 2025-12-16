@@ -1,16 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../data/dummy_data.dart';
 import '../models/quiz_model.dart';
 import 'quiz_session_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String _userName = 'User';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = prefs.getString('user_name') ?? 'User';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final quizzes = DummyData.getDummyQuizzes();
-    final userName = AuthService.getCurrentUser();
 
     return Scaffold(
       appBar: AppBar(
@@ -24,6 +44,17 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await AuthService.logout();
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -38,21 +69,17 @@ class HomeScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.shade600,
-                    Colors.purple.shade600,
-                  ],
+                  colors: [Colors.blue.shade600, Colors.purple.shade600],
                 ),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Row(
                 children: [
-                  // User Avatar
                   Container(
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3), // FIXED
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -62,7 +89,6 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 15),
-                  // User Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,13 +96,13 @@ class HomeScreen extends StatelessWidget {
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8), // FIXED
                             fontSize: 14,
                             fontFamily: 'Times New Roman',
                           ),
                         ),
                         Text(
-                          userName,
+                          _userName,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
@@ -85,23 +111,25 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 5),
-                        // Future Features Indicator
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2), // FIXED
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.rocket_launch, 
-                                  size: 14, color: Colors.white),
-                              const SizedBox(width: 5),
-                              const Text(
+                            children: const [
+                              Icon(
+                                Icons.rocket_launch,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
                                 'More features coming soon!',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -120,7 +148,6 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // Quizzes Section Header
             const Text(
               'Software Project Management Quizzes',
               style: TextStyle(
@@ -141,47 +168,37 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // Quizzes List - Only Quiz 1 and Quiz 2
-            Column(
-              children: [
-                // Quiz 1
-                QuizCard(quiz: quizzes[0]),
-                const SizedBox(height: 15),
-                // Quiz 2
-                QuizCard(quiz: quizzes[1]),
-              ],
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: quizzes.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 15.0),
+                  child: QuizCard(quiz: quizzes[index]),
+                );
+              },
             ),
           ],
         ),
       ),
-      // Bottom Navigation Bar
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
-        currentIndex: 0, // Home is selected
+        currentIndex: 0,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.quiz),
-            label: 'My Quizzes',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'My Quizzes'),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],
         onTap: (index) {
-          // Handle navigation
           if (index == 2) {
-            // Navigate to settings (to be implemented)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Settings screen coming soon!'),
-              ),
+              const SnackBar(content: Text('Settings screen coming soon!')),
             );
           }
         },
@@ -190,7 +207,6 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// Quiz Card Widget
 class QuizCard extends StatelessWidget {
   final Quiz quiz;
 
@@ -201,29 +217,21 @@ class QuizCard extends StatelessWidget {
     return Card(
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            // Quiz Icon
             Container(
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1), // FIXED
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
-                Icons.quiz,
-                color: Colors.blue,
-                size: 30,
-              ),
+              child: const Icon(Icons.quiz, color: Colors.blue, size: 30),
             ),
             const SizedBox(width: 15),
-            // Quiz Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,7 +258,6 @@ class QuizCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // Difficulty
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -271,7 +278,6 @@ class QuizCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Questions Count
                       Text(
                         '${quiz.questionCount} questions',
                         style: const TextStyle(
@@ -281,7 +287,6 @@ class QuizCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Time
                       Text(
                         '${quiz.duration} min',
                         style: const TextStyle(
@@ -295,8 +300,8 @@ class QuizCard extends StatelessWidget {
                 ],
               ),
             ),
-            // Start Button
-            Container(
+            SizedBox(
+              // FIXED: Container -> SizedBox
               width: 80,
               height: 35,
               child: ElevatedButton(
