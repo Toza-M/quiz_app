@@ -1,8 +1,22 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # <--- 1. Add this import
 from werkzeug.utils import secure_filename
 import re
 import os
 from typing import List, Dict
+from pathlib import Path
+
+try:
+    # load .env if present
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=Path(__file__).parent / '.env')
+except Exception:
+    pass
+
+try:
+    from flask_cors import CORS
+except Exception:
+    CORS = None
 
 try:
     # optional: PyPDF2 for PDF text extraction
@@ -11,8 +25,26 @@ except Exception:
     PyPDF2 = None
 
 app = Flask(__name__)
+CORS(app)
 app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024  # 8 MB max upload
 app.config['UPLOAD_EXTENSIONS'] = ['.txt', '.pdf']
+
+# enable CORS if available
+if CORS is not None:
+    CORS(app)
+
+# register auth blueprint if available
+try:
+    from .auth import auth as auth_blueprint
+except Exception:
+    try:
+        # fallback for direct run
+        from auth import auth as auth_blueprint
+    except Exception:
+        auth_blueprint = None
+
+if auth_blueprint is not None:
+    app.register_blueprint(auth_blueprint)
 
 
 def extract_text_from_pdf(stream) -> str:
@@ -167,4 +199,4 @@ def generate():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
