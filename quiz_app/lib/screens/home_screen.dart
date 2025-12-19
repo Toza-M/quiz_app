@@ -16,7 +16,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _userName = 'User'; // Default name
+  // --- SINGLETON ACCESS ---
+  final AuthService _authService = AuthService();
+  String _userName = 'User';
 
   @override
   void initState() {
@@ -24,21 +26,27 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadUserData();
   }
 
-  // Load User Data from JSON
   Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final userDataString = prefs.getString('user_data');
-
-    if (userDataString != null) {
-      final userData = jsonDecode(userDataString);
+    // Check Singleton memory first, then fallback to disk
+    if (_authService.currentUser != null) {
       setState(() {
-        _userName = userData['username'] ?? 'User';
+        _userName = _authService.currentUser!['username'] ?? 'User';
       });
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataString = prefs.getString('user_data');
+      if (userDataString != null) {
+        final userData = jsonDecode(userDataString);
+        setState(() {
+          _userName = userData['username'] ?? 'User';
+        });
+      }
     }
   }
 
   void _handleLogout() async {
-    await AuthService.logout();
+    // Calling the Singleton instance logout
+    await _authService.logout();
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
@@ -72,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- 1. User Welcome Section (Gradient) ---
+            // --- User Welcome Section ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -153,29 +161,22 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 30),
-
-            // --- 2. Quizzes Section Header ---
             const Text(
               'Software Project Management Quizzes',
               style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Times New Roman',
-                color: Colors.black87,
-              ),
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Times New Roman'),
             ),
             const SizedBox(height: 10),
             const Text(
               'Test your knowledge with these samples',
               style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-                fontFamily: 'Times New Roman',
-              ),
+                  fontSize: 14,
+                  color: Colors.grey,
+                  fontFamily: 'Times New Roman'),
             ),
             const SizedBox(height: 20),
-
-            // --- 3. Quizzes List ---
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -190,8 +191,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-
-      // --- Bottom Navigation Bar ---
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blue,
@@ -208,15 +207,14 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: (index) {
           if (index == 1) {
             Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const GenerateQuizScreen()),
-            );
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const GenerateQuizScreen()));
           } else if (index == 2) {
             Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const MyQuizzesScreen()),
-            );
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const MyQuizzesScreen()));
           }
         },
       ),
@@ -226,14 +224,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class QuizCard extends StatelessWidget {
   final Quiz quiz;
-
   const QuizCard({super.key, required this.quiz});
 
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.only(bottom: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -253,25 +249,19 @@ class QuizCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    quiz.title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Times New Roman',
-                    ),
-                  ),
+                  Text(quiz.title,
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Times New Roman')),
                   const SizedBox(height: 5),
-                  Text(
-                    quiz.description,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                      fontFamily: 'Times New Roman',
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(quiz.description,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                          fontFamily: 'Times New Roman'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -279,66 +269,42 @@ class QuizCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getDifficultyColor(quiz.difficulty),
+                          color: quiz.difficulty <= 2.0
+                              ? Colors.green
+                              : (quiz.difficulty <= 3.5
+                                  ? Colors.orange
+                                  : Colors.red),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          quiz.difficultyText,
+                        child: Text(quiz.difficultyText,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('${quiz.questionCount} Qs',
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${quiz.questionCount} Qs',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${quiz.duration} min',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
+                              fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              height: 35,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => QuizSessionScreen(quiz: quiz),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                ),
-                child: const Text('Start'),
-              ),
+                        builder: (context) => QuizSessionScreen(quiz: quiz)));
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue, foregroundColor: Colors.white),
+              child: const Text('Start'),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Color _getDifficultyColor(double difficulty) {
-    if (difficulty <= 2.0) return Colors.green;
-    if (difficulty <= 3.5) return Colors.orange;
-    return Colors.red;
   }
 }
