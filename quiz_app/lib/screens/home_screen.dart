@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../data/dummy_data.dart';
 import '../models/quiz_model.dart';
 import 'quiz_session_screen.dart';
+import 'my_quizzes_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -206,6 +207,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
         onTap: (index) {
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MyQuizzesScreen()),
+            );
+            return;
+          }
           if (index == 2) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Settings screen coming soon!')),
