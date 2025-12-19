@@ -9,6 +9,10 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  // --- SINGLETON ACCESS ---
+  // Accessing the shared instance of AuthService
+  final AuthService _authService = AuthService();
+
   // Controllers to capture user input
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -49,9 +53,8 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Passwords do not match')));
       return;
     }
 
@@ -69,14 +72,15 @@ class _SignupScreenState extends State<SignupScreen> {
       _isLoading = true;
     });
 
-    // Call the backend
-    // AuthService handles saving the token/name internally upon success
-    final result = await AuthService.register(name, email, password);
+    // --- REFACTORED: Calling the Singleton Instance Method ---
+    final result = await _authService.register(name, email, password);
 
     // Stop loading
-    setState(() {
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
 
     if (result['success']) {
       if (mounted) {
@@ -113,7 +117,6 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // App Logo/Title
                 const Icon(Icons.person_add, size: 60, color: Colors.white),
                 const SizedBox(height: 10),
                 const Text(
@@ -128,92 +131,41 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 30),
 
                 // Full Name Field
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Full Name',
-                      hintText: 'Enter your full name',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: const Icon(Icons.person, color: Colors.grey),
-                    ),
-                  ),
+                _buildTextField(
+                  controller: _nameController,
+                  label: 'Full Name',
+                  hint: 'Enter your full name',
+                  icon: Icons.person,
                 ),
                 const SizedBox(height: 15),
 
                 // Email Field
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Enter your email',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: const Icon(Icons.email, color: Colors.grey),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
+                _buildTextField(
+                  controller: _emailController,
+                  label: 'Email',
+                  hint: 'Enter your email',
+                  icon: Icons.email,
+                  keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 15),
 
                 // Password Field
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: const Icon(Icons.lock, color: Colors.grey),
-                    ),
-                  ),
+                _buildTextField(
+                  controller: _passwordController,
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  icon: Icons.lock,
+                  obscureText: true,
                 ),
                 const SizedBox(height: 15),
 
                 // Confirm Password Field
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    controller: _confirmPasswordController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: 'Confirm Password',
-                      hintText: 'Confirm your password',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      prefixIcon: const Icon(
-                        Icons.lock_outline,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
+                _buildTextField(
+                  controller: _confirmPasswordController,
+                  label: 'Confirm Password',
+                  hint: 'Confirm your password',
+                  icon: Icons.lock_outline,
+                  obscureText: true,
                 ),
                 const SizedBox(height: 10),
 
@@ -286,7 +238,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Already have an account
+                // Login Redirect
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -317,6 +269,37 @@ class _SignupScreenState extends State<SignupScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method for text fields to keep code clean
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    bool obscureText = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(25),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Icon(icon, color: Colors.grey),
         ),
       ),
     );

@@ -1,28 +1,42 @@
 import sqlite3
+import os
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 
 auth = Blueprint('auth', __name__)
-DATABASE = 'quiz_app.db'
 
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
+class DatabaseManager:
+    _instance = None
+    _connection = None
 
-# Create the users table if it doesn't exist
-def init_db():
-    conn = get_db_connection()
-    conn.execute('''CREATE TABLE IF NOT EXISTS users 
-                    (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                     username TEXT NOT NULL, 
-                     email TEXT UNIQUE NOT NULL, 
-                     password TEXT NOT NULL)''')
-    conn.commit()
-    conn.close()
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(DatabaseManager, cls).__new__(cls)
+            # Use absolute path to the DB file
+            db_path = os.path.join(os.path.dirname(__file__), 'quiz_app.db')
+            # check_same_thread=False is needed for SQLite in Flask
+            cls._connection = sqlite3.connect(db_path, check_same_thread=False)
+            cls._connection.row_factory = sqlite3.Row
+            cls._instance._init_db()
+        return cls._instance
 
-# Initialize the database structure
-init_db()
+    def _init_db(self):
+        """Initializes the schema inside the Singleton constructor."""
+        self._connection.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                username TEXT NOT NULL, 
+                email TEXT UNIQUE NOT NULL, 
+                password TEXT NOT NULL
+            )
+        ''')
+        self._connection.commit()
+
+    def get_conn(self):
+        return self._connection
+
+# Global access point for the Singleton
+db_manager = DatabaseManager()
 
 @auth.route('/register', methods=['POST'])
 def register():
@@ -30,33 +44,19 @@ def register():
     username = data.get('username')
     email = data.get('email')
     
-    # Make sure password is provided
     if not data.get('password'):
         return jsonify({"error": "Password is required"}), 400
     
-    password = generate_password_hash(data.get('password'))
+    password_hash = generate_password_hash(data.get('password'))
+    conn = db_manager.get_conn()
 
-    conn = get_db_connection()
     try:
-        # Insert user into database
         conn.execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-                     (username, email, password))
+                     (username, email, password_hash))
         conn.commit()
         return jsonify({"message": "User registered successfully"}), 201
-    except sqlite3.IntegrityError as e:
-        # Print error to terminal for debugging
-        print(f"DATABASE ERROR: {e}") 
-        
-        if "users.email" in str(e):
-            return jsonify({"error": "Email already exists"}), 400
-        
-        # Handle cases like "NOT NULL constraint failed: users.username"
-        return jsonify({"error": f"Registration failed: {str(e)}"}), 400
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        # Connection is always closed, whether success or error
-        conn.close()
+    except sqlite3.IntegrityError:
+        return jsonify({"error": "Email already exists"}), 400
 
 @auth.route('/login', methods=['POST'])
 def login():
@@ -64,23 +64,13 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    conn = get_db_connection()
-    try:
-        user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
-        
-        # Check if user exists and password matches the hash
-        if user and check_password_hash(user['password'], password):
-            return jsonify({
-                "message": "Login successful",
-                "user": {
-                    "id": user['id'], 
-                    "username": user['username'], 
-                    "email": user['email']
-                }
-            }), 200
-        else:
-            return jsonify({"error": "Invalid email or password"}), 401
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        conn.close()
+    conn = db_manager.get_conn()
+    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    
+    if user and check_password_hash(user['password'], password):
+        return jsonify({
+            "message": "Login successful",
+            "user": {"id": user['id'], "username": user['username'], "email": user['email']}
+        }), 200
+    
+    return jsonify({"error": "Invalid email or password"}), 401
