@@ -1,71 +1,153 @@
-AI Quiz App 🧠✨
-An advanced, AI-powered platform that transforms study materials into interactive quizzes. Using the power of Google Gemini, this application automates the creation of assessments from PDFs, images, and text files to enhance the learning experience.
+# 🧠 AI-Powered Quiz Application
 
-🚀 Key Features
-AI Quiz Generation: Automatically generate multiple-choice questions from uploaded documents (PDF, JPG, PNG) using the Gemini Pro API.
+A **cross-platform educational application** built with **Flutter** and **Flask** that transforms PDF and text-based learning materials into **interactive multiple-choice quizzes** using the **DeepSeek-V3 AI engine**.
 
-Smart Authentication: Secure user registration and login system with persistent session management.
+This project demonstrates the practical application of **software engineering principles**, **design patterns**, and **AI integration** in a real-world academic system.
 
-Quiz Management: Create, save, and review your history of generated quizzes.
+---
 
-Performance Tracking: Detailed score analysis after every session to track learning progress.
+## 🚀 Key Features
 
-Cross-Platform: Built with Flutter for a seamless experience on Android, iOS, and Web.
+### 🤖 AI-Driven Quiz Generation
+- Upload **PDF** or **TXT** documents
+- Automatically generate structured multiple-choice quizzes using **DeepSeek-V3**
+- AI responses are parsed into reliable JSON-based quiz formats
 
-🛠️ Tech Stack
-Frontend: Flutter (Dart)
+### 🔐 Secure Authentication
+- User registration and login
+- Passwords securely hashed using **Werkzeug**
+- No plain-text credentials stored
 
-Backend: Flask (Python)
+### 🔄 Persistent User Sessions
+- Logged-in users remain authenticated across app restarts
+- Session state stored efficiently using **Singleton services + SharedPreferences**
 
-AI Integration: Google Generative AI (Gemini Pro)
+### 🌐 Cross-Platform Support
+- Android
+- iOS
+- Windows Desktop
+- Web-ready architecture
 
-Database: SQLite for user data and quiz history
+### 🎨 Modern User Interface
+- Clean, gradient-based UI
+- Professional typography (**Times New Roman**)
+- Responsive layouts for multiple screen sizes
 
-CI/CD: GitHub Actions for automated Dart workflows
+---
 
-📋 Project Structure
-Plaintext
+## 🛠️ Technology Stack
 
-quiz_app/
-├── quiz_app/            # Flutter Mobile/Web Application
-│   ├── lib/             # Application source code
-│   └── pubspec.yaml     # Flutter dependencies
-├── backend/             # Python Flask Server
-│   ├── app.py           # Main API (AI generation logic)
-│   ├── auth.py          # Authentication & Database logic
-│   └── schema.sql       # Database structure
-└── Documents/           # Project Diagrams & Requirements
+### Frontend
+- **Framework:** Flutter (Dart)
+- **State Management:** Singleton Pattern
+- **Local Storage:** SharedPreferences
+- **Architecture:** Separation of UI & Services (Repository Pattern)
 
-⚙️ Installation & Setup
-Prerequisites:
-Flutter SDK
+### Backend
+- **Framework:** Flask (Python)
+- **AI Engine:** DeepSeek-V3 (OpenAI-compatible API)
+- **Database:** SQLite
+- **Security:** Werkzeug Password Hashing
+- **API Style:** RESTful JSON-based endpoints
 
-Python 3.10+
+---
 
-Gemini API Key
+## 🏗️ Software Design Patterns
 
-1. Backend Setup
-Bash
+### 🔁 Singleton Pattern (Frontend)
+- `AuthService` ensures a **single source of truth** for:
+  - User data
+  - Authentication tokens
+  - API access
+- Prevents redundant disk reads
+- Guarantees consistent session state across all screens
 
-cd quiz_app/backend
+### 🔁 Singleton Pattern (Backend)
+- **DatabaseManager**
+  - Controls SQLite access
+  - Prevents database locking and write conflicts
+- **DeepSeekManager**
+  - Reuses AI API connections
+  - Reduces latency and API initialization overhead
+
+### 🗂️ Repository Pattern
+- Decouples **UI widgets** from **data and API logic**
+- Improves maintainability and testability
+- Enables easier future backend migration
+
+---
+
+## 🚦 Getting Started
+
+### 1️⃣ Backend Setup
+
+```bash
+cd backend
 pip install -r requirements.txt
-# Create a .env file and add: GEMINI_API_KEY=your_key_here
-python run_schema.py   # Initialize the database
-python app.py          # Start the server (default: port 5000)
-2. Frontend Setup
-Bash
+python app.py
+```
 
+Set your **DeepSeek API Key** in `app.py` before running the server.
+
+---
+
+### 2️⃣ Frontend Setup
+
+```bash
 cd quiz_app
 flutter pub get
 flutter run
-🧪 Testing
-The backend includes a comprehensive test suite to ensure API reliability:
+```
 
-Bash
+---
 
-cd quiz_app/backend
-pytest tests/test_backend.py
-📄 License
-This project is part of a Software Engineering project focused on AI-driven educational tools.
+## 🧪 Testing & Quality Assurance
 
-Developed by the Quiz App Team.
+### Backend Testing
+```bash
+python -m unittest tests/test_backend.py
+```
+
+### Frontend Testing
+```bash
+flutter test
+```
+
+---
+
+## 📁 Project Structure
+
+```plaintext
+├── backend/
+│   ├── tests/
+│   ├── uploads/
+│   ├── app.py
+│   ├── auth.py
+│   └── quiz_app.db
+│
+├── quiz_app/
+│   ├── lib/
+│   │   ├── screens/
+│   │   ├── services/
+│   │   └── main.dart
+│   └── test/
+│
+└── Documents/
+    ├── UML/
+    └── Reports/
+```
+
+---
+
+## 🎓 Academic Requirements – Phase 2
+
+✅ Automated Testing  
+✅ Design Patterns (Singleton & Repository)  
+✅ UML Diagrams (Class, Sequence, Use Case)  
+✅ AI Integration with structured JSON output  
+
+---
+
+## 📌 Conclusion
+
+This project represents a **scalable, secure, and AI-enhanced educational system**, suitable for academic evaluation and future real-world deployment.
