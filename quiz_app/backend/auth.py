@@ -1,161 +1,86 @@
-from flask import Blueprint, request, jsonify, current_app
 import sqlite3
-import os
-import uuid
-import datetime
-import jwt
-import bcrypt
+from flask import Blueprint, request, jsonify
+from werkzeug.security import generate_password_hash, check_password_hash
 
-auth = Blueprint('auth', __name__, url_prefix='/auth')
-
-DB_FILE = 'quiz_app.db'
+auth = Blueprint('auth', __name__)
+DATABASE = 'quiz_app.db'
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
-    conn.row_factory = sqlite3.Row  # This allows accessing columns by name (row['email'])
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
     return conn
 
-def create_jwt(payload: dict) -> str:
-    secret = os.environ.get('JWT_SECRET', 'change-this-secret')
-    exp = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
-    payload_copy = payload.copy()
-    payload_copy['exp'] = exp
-    token = jwt.encode(payload_copy, secret, algorithm='HS256')
-    if isinstance(token, bytes):
-        token = token.decode('utf-8')
-    return token
+# Create the users table if it doesn't exist
+def init_db():
+    conn = get_db_connection()
+    conn.execute('''CREATE TABLE IF NOT EXISTS users 
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                     username TEXT NOT NULL, 
+                     email TEXT UNIQUE NOT NULL, 
+                     password TEXT NOT NULL)''')
+    conn.commit()
+    conn.close()
 
-def decode_jwt(token: str):
-    secret = os.environ.get('JWT_SECRET', 'change-this-secret')
-    try:
-        data = jwt.decode(token, secret, algorithms=['HS256'])
-        return data
-    except jwt.ExpiredSignatureError:
-        return None
-    except Exception:
-        return None
+# Initialize the database structure
+init_db()
 
 @auth.route('/register', methods=['POST'])
 def register():
-    data = request.get_json() or {}
-    full_name = data.get('full_name')
-    email = (data.get('email') or '').lower()
-    password = data.get('password')
+    data = request.get_json()
+    username = data.get('username')
+    email = data.get('email')
+    
+    # Make sure password is provided
+    if not data.get('password'):
+        return jsonify({"error": "Password is required"}), 400
+    
+    password = generate_password_hash(data.get('password'))
 
-    if not full_name or not email or not password:
-        return jsonify({'error': 'full_name, email and password are required'}), 400
-
-    pw_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-    user_id = str(uuid.uuid4())
-
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        
-        # Check if user already exists
-        cur.execute('SELECT id FROM users WHERE email = ?', (email,))
-        if cur.fetchone():
-            conn.close()
-            return jsonify({'error': 'email already exists'}), 409
-
-        # Insert new user
-        cur.execute(
-            '''INSERT INTO users (id, email, password_hash, full_name)
-               VALUES (?, ?, ?, ?)''',
-            (user_id, email, pw_hash.decode('utf-8'), full_name)
-        )
-        
-        # IMPORTANT: SQLite requires explicit commit to save changes
+        # Insert user into database
+        conn.execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+                     (username, email, password))
         conn.commit()
-
-        # Fetch the created row to return
-        cur.execute('SELECT id, email, full_name, created_at FROM users WHERE id = ?', (user_id,))
-        created = dict(cur.fetchone()) # Convert Row object to dict
+        return jsonify({"message": "User registered successfully"}), 201
+    except sqlite3.IntegrityError as e:
+        # Print error to terminal for debugging
+        print(f"DATABASE ERROR: {e}") 
         
-        conn.close()
-
-        token = create_jwt({'user_id': user_id, 'email': email})
-        return jsonify({'message': 'user registered', 'token': token, 'user': created}), 201
-
+        if "users.email" in str(e):
+            return jsonify({"error": "Email already exists"}), 400
+        
+        # Handle cases like "NOT NULL constraint failed: users.username"
+        return jsonify({"error": f"Registration failed: {str(e)}"}), 400
     except Exception as e:
-        current_app.logger.exception('DB error')
-        return jsonify({'error': 'internal server error', 'details': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+    finally:
+        # Connection is always closed, whether success or error
+        conn.close()
 
 @auth.route('/login', methods=['POST'])
 def login():
-    data = request.get_json() or {}
-    email = (data.get('email') or '').lower()
+    data = request.get_json()
+    email = data.get('email')
     password = data.get('password')
 
-    if not email or not password:
-        return jsonify({'error': 'email and password are required'}), 400
-
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('SELECT id, email, password_hash, full_name FROM users WHERE email = ?', (email,))
-        row = cur.fetchone()
-        conn.close()
-
-        if not row:
-            return jsonify({'error': 'invalid credentials'}), 401
-
-        # sqlite3.Row acts like a dict but we need to be careful accessing it
-        stored = row['password_hash']
-        # Depending on how it was stored, it might be bytes or string
-        if isinstance(stored, str):
-            stored = stored.encode('utf-8')
-
-        try:
-            ok = bcrypt.checkpw(password.encode('utf-8'), stored)
-        except Exception:
-            ok = False
-
-        if not ok:
-            return jsonify({'error': 'invalid credentials'}), 401
-
-        token = create_jwt({'user_id': row['id'], 'email': row['email']})
-        return jsonify({
-            'message': 'login successful', 
-            'token': token, 
-            'user': {
-                'id': row['id'], 
-                'email': row['email'], 
-                'full_name': row['full_name']
-            }
-        }), 200
-
+        user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+        
+        # Check if user exists and password matches the hash
+        if user and check_password_hash(user['password'], password):
+            return jsonify({
+                "message": "Login successful",
+                "user": {
+                    "id": user['id'], 
+                    "username": user['username'], 
+                    "email": user['email']
+                }
+            }), 200
+        else:
+            return jsonify({"error": "Invalid email or password"}), 401
     except Exception as e:
-        current_app.logger.exception('DB error')
-        return jsonify({'error': 'internal server error', 'details': str(e)}), 500
-
-@auth.route('/me', methods=['GET'])
-def me():
-    auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return jsonify({'error': 'authorization required'}), 401
-
-    token = auth_header.split(' ', 1)[1]
-    data = decode_jwt(token)
-    if not data:
-        return jsonify({'error': 'invalid or expired token'}), 401
-
-    user_id = data.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'invalid token payload'}), 401
-
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('SELECT id, email, full_name, created_at FROM users WHERE id = ?', (user_id,))
-        row = cur.fetchone()
+        return jsonify({"error": str(e)}), 500
+    finally:
         conn.close()
-
-        if not row:
-            return jsonify({'error': 'user not found'}), 404
-
-        # Convert Row to dict for JSON serialization
-        return jsonify({'user': dict(row)}), 200
-    except Exception as e:
-        current_app.logger.exception('DB error')
-        return jsonify({'error': 'internal server error', 'details': str(e)}), 500

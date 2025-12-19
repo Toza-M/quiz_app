@@ -3,7 +3,8 @@ import '../models/quiz_model.dart';
 
 class ScoreScreen extends StatelessWidget {
   final Quiz quiz;
-  final Map<String, List<String>> userAnswers; // questionId -> selectedOptionIds
+  final Map<String, List<String>>
+      userAnswers; // questionId -> selectedOptionIds
   final int timeSpent; // in seconds
 
   const ScoreScreen({
@@ -17,10 +18,13 @@ class ScoreScreen extends StatelessWidget {
     int correct = 0;
     for (final question in quiz.questions) {
       final userSelected = userAnswers[question.id] ?? [];
-      final correctOptions = question.options.where((opt) => opt.isCorrect).map((opt) => opt.id).toList();
-      
+      final correctOptions = question.options
+          .where((opt) => opt.isCorrect)
+          .map((opt) => opt.id)
+          .toList();
+
       // For single choice questions, check if the selected option is correct
-      if (userSelected.isNotEmpty && 
+      if (userSelected.isNotEmpty &&
           correctOptions.contains(userSelected.first) &&
           userSelected.length == 1) {
         correct++;
@@ -108,7 +112,7 @@ class ScoreScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Score Circle
                   Stack(
                     alignment: Alignment.center,
@@ -135,14 +139,17 @@ class ScoreScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // Score Details
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildScoreDetail('Correct', '$correctAnswers', Colors.green),
-                      _buildScoreDetail('Total', '$totalQuestions', Colors.blue),
-                      _buildScoreDetail('Time', _formatTime(timeSpent), Colors.orange),
+                      _buildScoreDetail(
+                          'Correct', '$correctAnswers', Colors.green),
+                      _buildScoreDetail(
+                          'Total', '$totalQuestions', Colors.blue),
+                      _buildScoreDetail(
+                          'Time', _formatTime(timeSpent), Colors.orange),
                     ],
                   ),
                 ],
@@ -179,10 +186,13 @@ class ScoreScreen extends StatelessWidget {
               itemBuilder: (context, index) {
                 final question = quiz.questions[index];
                 final userSelected = userAnswers[question.id] ?? [];
-                final correctOptions = question.options.where((opt) => opt.isCorrect).map((opt) => opt.id).toList();
-                final isCorrect = userSelected.isNotEmpty && 
-                                 correctOptions.contains(userSelected.first) &&
-                                 userSelected.length == 1;
+                final correctOptions = question.options
+                    .where((opt) => opt.isCorrect)
+                    .map((opt) => opt.id)
+                    .toList();
+                final isCorrect = userSelected.isNotEmpty &&
+                    correctOptions.contains(userSelected.first) &&
+                    userSelected.length == 1;
 
                 return _buildQuestionReview(
                   context,
@@ -234,10 +244,7 @@ class ScoreScreen extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pushNamedAndRemoveUntil(
-                          context, 
-                          '/home', 
-                          (route) => false
-                        );
+                            context, '/home', (route) => false);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -299,8 +306,9 @@ class ScoreScreen extends StatelessWidget {
     required bool isCorrect,
     required int questionNumber,
   }) {
-    final userSelectedOption = userSelected.isNotEmpty 
-        ? question.options.firstWhere((opt) => opt.id == userSelected.first, orElse: () => question.options[0])
+    final userSelectedOption = userSelected.isNotEmpty
+        ? question.options.firstWhere((opt) => opt.id == userSelected.first,
+            orElse: () => question.options[0])
         : null;
     final correctOption = question.options.firstWhere((opt) => opt.isCorrect);
 
@@ -357,7 +365,7 @@ class ScoreScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
-            
+
             // Question Text
             Text(
               question.questionText,

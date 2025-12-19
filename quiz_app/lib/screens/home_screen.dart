@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../data/dummy_data.dart';
 import '../models/quiz_model.dart';
 import 'quiz_session_screen.dart';
+import 'my_quizzes_screen.dart';
+import 'generate_quiz_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,22 +21,30 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserName();
+    _loadUserData();
   }
 
-  // Fetch the name from shared preferences
-  Future<void> _loadUserName() async {
+  // Load User Data from JSON
+  Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      // We assume the name is saved with key 'user_name'.
-      // If null, it defaults to 'User'
-      _userName = prefs.getString('user_name') ?? 'User';
-    });
+    final userDataString = prefs.getString('user_data');
+
+    if (userDataString != null) {
+      final userData = jsonDecode(userDataString);
+      setState(() {
+        _userName = userData['username'] ?? 'User';
+      });
+    }
+  }
+
+  void _handleLogout() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override
   Widget build(BuildContext context) {
-    // Ensure DummyData.getDummyQuizzes() returns your list of quizzes
     final quizzes = DummyData.getDummyQuizzes();
 
     return Scaffold(
@@ -51,12 +62,8 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await AuthService.logout();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
-            },
+            onPressed: _handleLogout,
+            tooltip: 'Logout',
           ),
         ],
       ),
@@ -65,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // User Welcome Section
+            // --- 1. User Welcome Section (Gradient) ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(20),
@@ -76,10 +83,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   colors: [Colors.blue.shade600, Colors.purple.shade600],
                 ),
                 borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  )
+                ],
               ),
               child: Row(
                 children: [
-                  // User Avatar
                   Container(
                     width: 60,
                     height: 60,
@@ -87,14 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: Colors.white.withOpacity(0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.person,
-                      size: 30,
-                      color: Colors.white,
-                    ),
+                    child:
+                        const Icon(Icons.person, size: 30, color: Colors.white),
                   ),
                   const SizedBox(width: 15),
-                  // User Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,51 +111,41 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'Welcome back,',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withOpacity(0.9),
                             fontSize: 14,
                             fontFamily: 'Times New Roman',
                           ),
                         ),
                         Text(
-                          _userName, // Uses the state variable
+                          _userName,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 22,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Times New Roman',
                           ),
                         ),
-                        const SizedBox(height: 5),
-                        // Future Features Indicator
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
+                        const SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const GenerateQuizScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.auto_awesome, size: 14),
+                          label: const Text("Create New Quiz"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            textStyle: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 12),
                           ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.rocket_launch,
-                                size: 14,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 5),
-                              const Text(
-                                'More features coming soon!',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontFamily: 'Times New Roman',
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        )
                       ],
                     ),
                   ),
@@ -155,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Quizzes Section Header
+            // --- 2. Quizzes Section Header ---
             const Text(
               'Software Project Management Quizzes',
               style: TextStyle(
@@ -167,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Test your knowledge of SW Project Management concepts',
+              'Test your knowledge with these samples',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey,
@@ -176,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Quizzes List
+            // --- 3. Quizzes List ---
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -191,24 +190,32 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      // Bottom Navigation Bar
+
+      // --- Bottom Navigation Bar ---
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.white,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
         currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.quiz), label: 'My Quizzes'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+              icon: Icon(Icons.auto_awesome), label: 'Generate'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.history), label: 'My Quizzes'),
         ],
         onTap: (index) {
-          if (index == 2) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Settings screen coming soon!')),
+          if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const GenerateQuizScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const MyQuizzesScreen()),
             );
           }
         },
@@ -217,7 +224,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Quiz Card Widget
 class QuizCard extends StatelessWidget {
   final Quiz quiz;
 
@@ -226,14 +232,13 @@ class QuizCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 3,
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            // Quiz Icon
             Container(
               width: 50,
               height: 50,
@@ -244,7 +249,6 @@ class QuizCard extends StatelessWidget {
               child: const Icon(Icons.quiz, color: Colors.blue, size: 30),
             ),
             const SizedBox(width: 15),
-            // Quiz Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,12 +275,9 @@ class QuizCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      // Difficulty
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: _getDifficultyColor(quiz.difficulty),
                           borderRadius: BorderRadius.circular(8),
@@ -287,38 +288,27 @@ class QuizCard extends StatelessWidget {
                             color: Colors.white,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            fontFamily: 'Times New Roman',
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // Questions Count
                       Text(
-                        '${quiz.questionCount} questions',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontFamily: 'Times New Roman',
-                        ),
+                        '${quiz.questionCount} Qs',
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       const SizedBox(width: 10),
-                      // Time
                       Text(
                         '${quiz.duration} min',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                          fontFamily: 'Times New Roman',
-                        ),
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            // Start Button
-            Container(
-              width: 80,
+            SizedBox(
               height: 35,
               child: ElevatedButton(
                 onPressed: () {
@@ -335,16 +325,9 @@ class QuizCard extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: EdgeInsets.zero,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                child: const Text(
-                  'Start',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Times New Roman',
-                  ),
-                ),
+                child: const Text('Start'),
               ),
             ),
           ],

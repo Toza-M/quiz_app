@@ -1,202 +1,136 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # <--- 1. Add this import
-from werkzeug.utils import secure_filename
-import re
 import os
-from typing import List, Dict
-from pathlib import Path
+import json
+import traceback
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from openai import OpenAI # Switched from google.genai
+from PyPDF2 import PdfReader
+from werkzeug.utils import secure_filename
 
-try:
-    # load .env if present
-    from dotenv import load_dotenv
-    load_dotenv(dotenv_path=Path(__file__).parent / '.env')
-except Exception:
-    pass
-
-try:
-    from flask_cors import CORS
-except Exception:
-    CORS = None
-
-try:
-    # optional: PyPDF2 for PDF text extraction
-    import PyPDF2
-except Exception:
-    PyPDF2 = None
+# Import the blueprint from your auth.py file
+from auth import auth
 
 app = Flask(__name__)
-CORS(app)
-app.config['MAX_CONTENT_LENGTH'] = 8 * 1024 * 1024  # 8 MB max upload
-app.config['UPLOAD_EXTENSIONS'] = ['.txt', '.pdf']
 
-# enable CORS if available
-if CORS is not None:
-    CORS(app)
+# IMPORTANT: Enable CORS for the whole app and specific prefixes
+CORS(app, resources={r"/*": {"origins": "*"}})
 
-# register auth blueprint if available
-try:
-    from .auth import auth as auth_blueprint
-except Exception:
+# Register the auth blueprint
+app.register_blueprint(auth, url_prefix='/auth')
+
+# --- CONFIGURATION FOR DEEPSEEK ---
+# Use the API Key provided
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY', 'sk-d55658690eff4cc281e892413e42e786')
+
+# Initialize OpenAI client pointing to DeepSeek's URL
+client = OpenAI(
+    api_key=DEEPSEEK_API_KEY, 
+    base_url="https://api.deepseek.com"
+)
+
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def extract_text_from_pdf(file_path):
     try:
-        # fallback for direct run
-        from auth import auth as auth_blueprint
-    except Exception:
-        auth_blueprint = None
+        reader = PdfReader(file_path)
+        text = ""
+        for page in reader.pages:
+            content = page.extract_text()
+            if content: text += content
+        return text
+    except Exception as e:
+        print(f"Error reading PDF: {e}")
+        return ""
 
-if auth_blueprint is not None:
-    app.register_blueprint(auth_blueprint)
+@app.route('/generate-quiz', methods=['POST'])
+def generate_quiz():
+    file_path = None
+    try:
+        # 1. File Upload Handling
+        if 'file' not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
 
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
 
-def extract_text_from_pdf(stream) -> str:
-    if PyPDF2 is None:
-        raise RuntimeError('PyPDF2 not installed')
-    reader = PyPDF2.PdfReader(stream)
-    parts = []
-    for page in reader.pages:
+        # 2. Extract Text
+        if filename.endswith('.pdf'):
+            text_content = extract_text_from_pdf(file_path)
+        else:
+            try:
+                # For .txt files
+                file.seek(0)
+                text_content = file.read().decode('utf-8')
+            except:
+                text_content = ""
+
+        if not text_content:
+            return jsonify({"error": "Could not extract text from file"}), 400
+
+        # 3. Define System Prompt for JSON Structure
+        system_prompt = """
+        You are a helpful AI that generates quizzes based on provided text.
+        You MUST return the output as a valid JSON object.
+        The JSON object must have a key "questions" which is a list.
+        Each item in the list must look like this:
+        {
+            "question": "The question string",
+            "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+            "answer_index": 0 
+        }
+        (answer_index is the 0-based integer index of the correct option).
+        Do not include Markdown formatting (like ```json). Just return the raw JSON string.
+        """
+
+        user_prompt = f"Generate 5 multiple-choice questions based on this text:\n\n{text_content[:12000]}"
+
+        # 4. Call DeepSeek API
+        print("Sending request to DeepSeek...")
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={'type': 'json_object'}, # Forces JSON mode
+            temperature=1.1,
+            stream=False
+        )
+
+        # 5. Parse Response
+        content = response.choices[0].message.content
+        print("DeepSeek Response Received.")
+        
         try:
-            parts.append(page.extract_text() or '')
-        except Exception:
-            continue
-    return "\n".join(parts)
+            parsed_json = json.loads(content)
+            
+            # DeepSeek usually returns { "questions": [...] }
+            if isinstance(parsed_json, dict) and "questions" in parsed_json:
+                return jsonify(parsed_json["questions"]), 200
+            elif isinstance(parsed_json, list):
+                return jsonify(parsed_json), 200
+            else:
+                return jsonify({"error": "AI format error"}), 500
 
+        except json.JSONDecodeError:
+            return jsonify({"error": "Invalid JSON from AI"}), 500
 
-def extract_text(file_storage) -> str:
-    filename = secure_filename(file_storage.filename or '')
-    ext = os.path.splitext(filename)[1].lower()
-    if ext == '.pdf':
-        # read bytes and pass to PyPDF2
-        if PyPDF2 is None:
-            raise RuntimeError('PDF support is not available (PyPDF2 not installed)')
-        file_storage.stream.seek(0)
-        return extract_text_from_pdf(file_storage.stream)
-
-    # default: treat as text
-    data = file_storage.read()
-    # try decode
-    try:
-        return data.decode('utf-8')
-    except Exception:
-        try:
-            return data.decode('latin-1')
-        except Exception:
-            return ''
-
-
-_sentence_split_re = re.compile(r'(?<=[.!?])\s+')
-_word_re = re.compile(r"[A-Za-zÀ-ÖØ-öø-ÿ'-]+")
-
-
-def generate_questions_from_text(text: str, count: int = 5) -> List[Dict[str, str]]:
-    # Normalize whitespace
-    text = re.sub(r'\s+', ' ', text).strip()
-    if not text:
-        return []
-
-    sentences = [s.strip() for s in _sentence_split_re.split(text) if len(s.strip()) > 20]
-    if not sentences:
-        # fallback: split by lines
-        sentences = [l.strip() for l in text.split('\n') if len(l.strip()) > 20]
-
-    # score sentences by length (longer sentences likely contain facts)
-    sentences_sorted = sorted(sentences, key=lambda s: len(s), reverse=True)
-
-    selected = sentences_sorted[: max(count * 2, 10)]
-
-    questions = []
-    used_sentences = set()
-
-    for s in selected:
-        if len(questions) >= count:
-            break
-        if s in used_sentences:
-            continue
-        used_sentences.add(s)
-
-        # Find candidate answer words (longer words first)
-        words = _word_re.findall(s)
-        # prefer words with letters and length >=5
-        candidates = [w for w in words if len(w) >= 5]
-        candidates = sorted(set(candidates), key=lambda w: -len(w))
-
-        if not candidates and words:
-            candidates = words
-
-        if not candidates:
-            continue
-
-        answer = candidates[0]
-        # replace first occurrence (case-insensitive)
-        pattern = re.compile(re.escape(answer), re.IGNORECASE)
-        question_text = pattern.sub('_____', s, count=1)
-
-        # ensure question ends with question mark when appropriate
-        if not question_text.endswith('?') and not question_text.endswith('.'):
-            question_text = question_text.strip()
-            if not question_text.endswith('?'):
-                question_text = question_text + '?'
-
-        questions.append({'question': question_text, 'answer': answer})
-
-    # If we couldn't find enough, pad with short-question heuristics
-    if len(questions) < count:
-        # take remaining sentences or create generic questions
-        for i, s in enumerate(sentences):
-            if len(questions) >= count:
-                break
-            if s in used_sentences:
-                continue
-            words = _word_re.findall(s)
-            answer = words[0] if words else ''
-            q = s
-            if answer:
-                q = re.sub(re.escape(answer), '_____', s, count=1)
-            if not q.endswith('?'):
-                q = q.strip()
-                q = q + '?'
-            questions.append({'question': q, 'answer': answer})
-
-    # limit to requested count
-    return questions[:count]
-
-
-@app.route('/generate', methods=['POST'])
-def generate():
-    """Accepts multipart/form-data with field 'file' (text or pdf) and optional 'count' param.
-    Returns JSON with generated questions.
-    """
-    if 'file' not in request.files:
-        return jsonify({'error': 'file field is required'}), 400
-
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'no file selected'}), 400
-
-    filename = secure_filename(file.filename)
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in app.config['UPLOAD_EXTENSIONS']:
-        return jsonify({'error': f'unsupported file type: {ext}'}), 415
-
-    try:
-        text = extract_text(file)
-    except RuntimeError as e:
-        return jsonify({'error': str(e)}), 500
-
-    count = 5
-    try:
-        if 'count' in request.form:
-            count = int(request.form.get('count'))
-            count = max(1, min(10, count))
-    except Exception:
-        count = 5
-
-    questions = generate_questions_from_text(text, count=count)
-
-    return jsonify({
-        'filename': filename,
-        'sentence_count': len([s for s in _sentence_split_re.split(text) if s.strip()]),
-        'questions': questions,
-    })
-
+    except Exception as e:
+        print("!!!!!!!! SERVER ERROR !!!!!!!!")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if file_path and os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except:
+                pass
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
