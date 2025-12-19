@@ -27,7 +27,7 @@ class GetStartedScreen extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // Parabolic curve divider
           Positioned(
             top: MediaQuery.of(context).size.height * 0.6 - 1,
@@ -158,19 +158,19 @@ class ParabolicCurvePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    
+
     // Start from bottom-left
     path.moveTo(0, size.height);
-    
+
     // Create parabolic curve (x² function)
     for (double x = 0; x <= size.width; x++) {
       // Normalize x to range [-1, 1]
       double normalizedX = (x / size.width) * 2 - 1;
-      
+
       // Calculate y using parabolic function y = x²
       // We invert it to create a upward curve
       double y = normalizedX * normalizedX * size.height * 0.8;
-      
+
       // Draw the curve
       if (x == 0) {
         path.moveTo(x, y);
@@ -178,7 +178,7 @@ class ParabolicCurvePainter extends CustomPainter {
         path.lineTo(x, y);
       }
     }
-    
+
     // Complete the shape by going to bottom-right and back to start
     path.lineTo(size.width, size.height);
     path.lineTo(0, size.height);

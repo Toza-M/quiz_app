@@ -5,7 +5,7 @@ import 'score_screen.dart';
 
 class QuizSessionScreen extends StatefulWidget {
   final Quiz quiz;
-  
+
   const QuizSessionScreen({super.key, required this.quiz});
 
   @override
@@ -47,8 +47,9 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
 
   void _finishQuiz() {
     _timer.cancel();
-    final timeSpent = (DateTime.now().millisecondsSinceEpoch - startTime) ~/ 1000;
-    
+    final timeSpent =
+        (DateTime.now().millisecondsSinceEpoch - startTime) ~/ 1000;
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -71,7 +72,7 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     // Save current answer
     final currentQuestion = widget.quiz.questions[currentQuestionIndex];
     userAnswers[currentQuestion.id] = List.from(selectedAnswers);
-    
+
     if (currentQuestionIndex < widget.quiz.questions.length - 1) {
       setState(() {
         currentQuestionIndex++;
@@ -86,7 +87,8 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
     if (currentQuestionIndex > 0) {
       setState(() {
         currentQuestionIndex--;
-        selectedAnswers = userAnswers[widget.quiz.questions[currentQuestionIndex].id] ?? [];
+        selectedAnswers =
+            userAnswers[widget.quiz.questions[currentQuestionIndex].id] ?? [];
       });
     }
   }
@@ -212,18 +214,20 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                     itemBuilder: (context, index) {
                       final option = question.options[index];
                       final isSelected = selectedAnswers.contains(option.id);
-                      
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         child: ElevatedButton(
                           onPressed: () => _selectAnswer(option.id),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isSelected 
+                            backgroundColor: isSelected
                                 ? Colors.blue.withOpacity(0.1)
                                 : Colors.white,
                             foregroundColor: Colors.black,
                             side: BorderSide(
-                              color: isSelected ? Colors.blue : Colors.grey.shade300,
+                              color: isSelected
+                                  ? Colors.blue
+                                  : Colors.grey.shade300,
                               width: isSelected ? 2 : 1,
                             ),
                             shape: RoundedRectangleBorder(
@@ -241,10 +245,13 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: isSelected ? Colors.blue : Colors.grey,
+                                    color:
+                                        isSelected ? Colors.blue : Colors.grey,
                                     width: 2,
                                   ),
-                                  color: isSelected ? Colors.blue : Colors.transparent,
+                                  color: isSelected
+                                      ? Colors.blue
+                                      : Colors.transparent,
                                 ),
                                 child: isSelected
                                     ? const Icon(
@@ -316,11 +323,14 @@ class _QuizSessionScreenState extends State<QuizSessionScreen> {
                 ],
                 // Next/Finish Button
                 Expanded(
-                  flex: currentQuestionIndex > 0 ? 1 : 2, // Adjust flex based on button visibility
+                  flex: currentQuestionIndex > 0
+                      ? 1
+                      : 2, // Adjust flex based on button visibility
                   child: Container(
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: selectedAnswers.isNotEmpty ? _nextQuestion : null,
+                      onPressed:
+                          selectedAnswers.isNotEmpty ? _nextQuestion : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,

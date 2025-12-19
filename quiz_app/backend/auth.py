@@ -28,17 +28,34 @@ def register():
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')
+    # Make sure password is hashable (handle None case)
+    if not data.get('password'):
+        return jsonify({"error": "Password is required"}), 400
+    
     password = generate_password_hash(data.get('password'))
 
+    conn = get_db_connection()
     try:
-        conn = get_db_connection()
+        # The 'try' block ensures we catch errors
         conn.execute('INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
                      (username, email, password))
         conn.commit()
-        conn.close()
         return jsonify({"message": "User registered successfully"}), 201
-    except sqlite3.IntegrityError:
-        return jsonify({"error": "Email already exists"}), 400
+    except sqlite3.IntegrityError as e:
+        # Print the actual error to your terminal
+        print(f"DATABASE ERROR: {e}") 
+        
+        # Check if it is actually the email causing the issue
+        if "users.email" in str(e):
+            return jsonify({"error": "Email already exists"}), 400
+        
+        # Otherwise, tell us what is really wrong (e.g., "NOT NULL constraint failed: users.username")
+        return jsonify({"error": f"Registration failed: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        # 'finally' runs NO MATTER WHAT happens above
+        conn.close()
 
 @auth.route('/login', methods=['POST'])
 def login():
@@ -47,14 +64,16 @@ def login():
     password = data.get('password')
 
     conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
-    conn.close()
-
-    if user and check_password_hash(user['password'], password):
-        # In a real app, you would return a JWT token here
-        return jsonify({
-            "message": "Login successful",
-            "user": {"id": user['id'], "username": user['username'], "email": user['email']}
-        }), 200
-    else:
-        return jsonify({"error": "Invalid email or password"}), 401
+    try:
+        user = conn.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+        
+        if user and check_password_hash(user['password'], password):
+            return jsonify({
+                "message": "Login successful",
+                "user": {"id": user['id'], "username": user['username'], "email": user['email']}
+            }), 200
+        else:
+            return jsonify({"error": "Invalid email or password"}), 401
+    finally:
+        # Always close the connection!
+        conn.close()
