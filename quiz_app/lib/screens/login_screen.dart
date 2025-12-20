@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -32,6 +33,15 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (result['success']) {
+        // --- ADDED CODE TO SAVE USERNAME ---
+        final prefs = await SharedPreferences.getInstance();
+
+        // Extract username from the nested 'user' map returned by your backend
+        if (result['user'] != null && result['user']['username'] != null) {
+          await prefs.setString('user_name', result['user']['username']);
+        }
+        // ------------------------------------
+
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

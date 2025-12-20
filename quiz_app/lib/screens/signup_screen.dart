@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -72,7 +73,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _isLoading = true;
     });
 
-    // --- REFACTORED: Calling the Singleton Instance Method ---
+    // Calling the Singleton Instance Method
     final result = await _authService.register(name, email, password);
 
     // Stop loading
@@ -83,6 +84,11 @@ class _SignupScreenState extends State<SignupScreen> {
     }
 
     if (result['success']) {
+      // --- ADDED CODE TO SAVE NAME LOCALLY ---
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_name', name);
+      // ---------------------------------------
+
       if (mounted) {
         // Navigate to Home on success
         Navigator.pushReplacementNamed(context, '/home');

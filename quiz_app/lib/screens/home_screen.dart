@@ -27,19 +27,31 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadUserData() async {
-    // Check Singleton memory first, then fallback to disk
+    // 1. Check if AuthService already has the user in memory
     if (_authService.currentUser != null) {
       setState(() {
         _userName = _authService.currentUser!['username'] ?? 'User';
       });
     } else {
+      // 2. Fallback to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      final userDataString = prefs.getString('user_data');
-      if (userDataString != null) {
-        final userData = jsonDecode(userDataString);
+
+      // Try to get the simple 'user_name' string first
+      String? savedName = prefs.getString('user_name');
+
+      if (savedName != null) {
         setState(() {
-          _userName = userData['username'] ?? 'User';
+          _userName = savedName;
         });
+      } else {
+        // Optional: Check if it's hidden inside 'user_data' JSON (your old logic)
+        final userDataString = prefs.getString('user_data');
+        if (userDataString != null) {
+          final userData = jsonDecode(userDataString);
+          setState(() {
+            _userName = userData['username'] ?? 'User';
+          });
+        }
       }
     }
   }
