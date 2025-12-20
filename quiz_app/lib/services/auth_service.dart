@@ -14,8 +14,7 @@ class AuthService {
     return _instance;
   }
 
-  static const String baseUrl =
-      "http://app.netlify.com/projects/keen-tapioca-e38e62/deploys/694704d39954e94c04b41809";
+  static const String baseUrl = "http://127.0.0.1:5000/auth";
   static const String generateUrl = "http://127.0.0.1:5000/generate-quiz";
 
   // Cache user data in the Singleton state
